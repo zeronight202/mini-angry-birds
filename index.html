@@ -1,1 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angry Birds Clone Simple</title>
+    <!-- Thư viện p5.js để vẽ màn hình -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <!-- Thư viện Matter.js để xử lý vật lý (trọng lực, va chạm) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.18.0/matter.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
 
+<script>
+    const { Engine, World, Bodies, Constraint, Body } = Matter;
+
+    let engine, world;
+    let ground, bird, slingshot;
+    let boxes = [];
+    let isDragging = false;
+
+    function setup() {
+        createCanvas(800, 400);
+
+        // Khởi tạo Engine vật lý
+        engine = Engine.create();
+        world = engine.world;
+
+        // Tạo mặt đất
+        ground = Bodies.rectangle(400, 380, 800, 40, { isStatic: true });
+        World.add(world, ground);
+
+        // Tạo Chim (Hình tròn)
+        bird = Bodies.circle(150, 250, 15, { density: 0.004 });
+        World.add(world, bird);
+
+        // Tạo Súng cao su (Ràng buộc chim với vị trí cố định)
+        slingshot = Constraint.create({
+            pointA: { x: 150, y: 250 },
+            bodyB: bird,
+            stiffness: 0.05,
+            length: 10
+        });
+        World.add(world, slingshot);
+
+        // Tạo Công trình (Các khối gỗ đứng chồng lên nhau)
+        for (let i = 0; i < 4; i++) {
+            for (let j = 0; j < 3; j++) {
+                let box = Bodies.rectangle(550 + j * 35, 320 - i * 50, 30, 45);
+                boxes.push(box);
+                World.add(world, box);
+            }
+        }
+    }
+
+    function draw() {
+        background(135, 206, 235); // Màu nền trời
+        Engine.update(engine);
+
+        // Vẽ Mặt đất
+        fill(34, 139, 34);
+        rectMode(CENTER);
+        rect(ground.position.x, ground.position.y, 800, 40);
+
+        // Vẽ Các khối gỗ
+        fill(160, 82, 45);
+        for (let box of boxes) {
+            drawBody(box);
+        }
+
+        // Vẽ Súng cao su (Dây thun)
+        if (slingshot.bodyB) {
+            stroke(50);
+            strokeWeight(4);
+            line(slingshot.pointA.x, slingshot.pointA.y, bird.position.x, bird.position.y);
+        }
+
+        // Vẽ Chim
+        fill(255, 0, 0);
+        noStroke();
+        ellipse(bird.position.x, bird.position.y, 30, 30);
+
+        // Giữ chim ở vị trí chuột khi đang kéo
+        if (isDragging) {
+            Body.setPosition(bird, { x: mouseX, y: mouseY });
+        }
+    }
+
+    // Xử lý sự kiện kéo thả chuột
+    function mousePressed() {
+        // Kiểm tra nếu nhấp gần chim
+        let d = dist(mouseX, mouseY, bird.position.x, bird.position.y);
+        if (d < 30) {
+            isDragging = true;
+        }
+    }
+
+    function mouseReleased() {
+        if (isDragging) {
+            isDragging = false;
+            // Bắn chim đi sau một khoảng thời gian ngắn
+            setTimeout(() => {
+                slingshot.bodyB = null;
+            }, 50);
+        }
+    }
+
+    // Hàm hỗ trợ vẽ xoay khối theo vật lý
+    function drawBody(body) {
+        push();
+        translate(body.position.x, body.position.y);
+        rotate(body.angle);
+        rectMode(CENTER);
+        rect(0, 0, 30, 45);
+        pop();
+    }
+</script>
+
+</body>
+</html>
